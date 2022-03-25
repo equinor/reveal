@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "cross-env HTTPS=true react-app-rewired start",
+    "start": "cross-env react-app-rewired start",
     "start:e2e-server": "cross-env PORT=3000 HTTPS=false BROWSER=none react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test --testPathIgnorePatterns 'src/visual_tests'",
@@ -14,7 +14,8 @@
     "snapshots:update": "yarn run ci:start-server 'test:visual:update'",
     "ci:e2e": "yarn run ci:start-server 'test:visual'",
     "ci:start-server": "START_SERVER_AND_TEST_INSECURE=1 start-server-and-test 'start:e2e-server' http://localhost:3000",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "logmemory": "DEBUG=cypress:server:util:process_profiler  node_modules/cypress/bin/cypress run --browser chrome 1> stdout.txt 2> logs.txt"
   },
   "author": "Lars Moastuen <lars.moastuen@cognite.com>",
   "contributors": [
@@ -59,6 +60,8 @@
     "@types/webpack-env": "^1.16.2",
     "copy-webpack-plugin": "^6.2.1",
     "cross-env": "^7.0.2",
+    "cypress": "^9.5.2",
+    "eslint-plugin-cypress": "^2.12.1",
     "jest-environment-puppeteer": "^4.4.0",
     "jest-image-snapshot": "^4.3.0",
     "jest-puppeteer": "^4.4.0",

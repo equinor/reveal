@@ -103,7 +103,9 @@ export function Simple() {
   }, []);
   const { isLoading, itemsLoaded, itemsRequested } = loadingState;
   return (
+
     <CanvasWrapper>
+      <div style={{position: "absolute", top: 0, left: "50%", zIndex: 50000, fontSize: "3rem"}} className={!loadingState.isLoading ? "cypress-loading-finished" : ""}>{loadingState.isLoading.toString()}</div>
       <Loader isLoading={isLoading} style={{ position: 'absolute' }}>
         Downloading {itemsLoaded} / {itemsRequested} sectors.
       </Loader>
