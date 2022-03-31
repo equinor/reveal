@@ -23,18 +23,23 @@ yarn && yarn run start
 This will run the react app on `http://localhost:3000`
 
 
+
 3. Open a second terminal and:
 ````
 cd examples
 yarn run logmemory  
 ````
+
+NB: If you get an error, it might be because Cypress needs to do some first-time setup. Try running `yarn run cypress:open` first, and when it finishes run `yarn run logmemory` again.
+
+
 This will log the test results to `logs.txt`
 At the end of the file, there is a table labelled:
 **cypress:server:util:process_profiler current & mean memory and CPU usage by process group:**
 
 The relevant number is found in the cell **"Chrome"->"maxMemRssMb"** 
 
-Run the test 5-10 times, and calculate the average results from the tests.
+Run the test a few times, and calculate the average results from the tests.
 Please enter your results in the `examples/memoryLogResults.md` file.  
 
 
