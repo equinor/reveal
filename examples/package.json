@@ -15,7 +15,8 @@
     "ci:e2e": "yarn run ci:start-server 'test:visual'",
     "ci:start-server": "START_SERVER_AND_TEST_INSECURE=1 start-server-and-test 'start:e2e-server' http://localhost:3000",
     "eject": "react-scripts eject",
-    "logmemory": "DEBUG=cypress:server:util:process_profiler  node_modules/cypress/bin/cypress run --browser chrome 1> stdout.txt 2> logs.txt"
+    "logmemory": "set DEBUG=cypress:server:util:process_profiler && node_modules/cypress/bin/cypress run --browser chrome 1> stdout.txt 2> logs.txt",
+    "logmemory:mac": "DEBUG=cypress:server:util:process_profiler  node_modules/cypress/bin/cypress run --browser chrome 1> stdout.txt 2> logs.txt"
   },
   "author": "Lars Moastuen <lars.moastuen@cognite.com>",
   "contributors": [
