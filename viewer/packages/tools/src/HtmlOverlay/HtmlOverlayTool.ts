@@ -255,6 +255,8 @@ export class HtmlOverlayTool extends Cognite3DViewerToolBase {
     }
     this.viewerDomElement.removeChild(htmlElement);
     this._htmlOverlays.delete(htmlElement);
+
+    this.scheduleUpdate();
   }
 
   /**
