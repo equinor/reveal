@@ -3,6 +3,9 @@
  */
 import * as THREE from 'three';
 import assert from 'assert';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
+
+import { DDSLoader } from 'three/examples/jsm/loaders/DDSLoader';
 
 import { setPrimitiveTopology } from './reveal-glb-parser/primitiveGeometries';
 import {
@@ -233,22 +236,102 @@ export class GltfSectorParser {
     if (primitive.material === undefined) {
       return undefined;
     }
+    //   "textures": [
+    //     {
+    //         "extensions": {
+    //             "MSFT_texture_dds": {
+    //                 "source": 0
+    //             }
+    //         },
+    //         "source": 1
+    //     }
+    // ]
+    const textureMetadata = json.textures[primitive.material];
+    const textureIndex = textureMetadata.extensions?.KHR_texture_basisu?.source ?? textureMetadata.source;
 
-    const image = json.images[json.textures[primitive.material].source];
+    const image = json.images[textureIndex];
 
     const offsetToBinChunk = glbHeaderData.byteOffsetToBinContent;
     const bufferView = json.bufferViews[image.bufferView];
     const byteOffsetInData = offsetToBinChunk + (bufferView.byteOffset ?? 0);
     const newView = data.slice(byteOffsetInData, byteOffsetInData + bufferView.byteLength);
 
+    if (textureMetadata.extensions?.MSFT_texture_dds) {
+      const textur = this.ddsParse(newView);
+      return textur;
+    }
+
+    console.log(textureMetadata);
+    if (textureMetadata.extensions?.KHR_texture_basisu) {
+      const textur = this.ktx2ParseAsync(newView, image.mimeType);
+      return textur;
+    }
+
     const texture = new THREE.Texture();
     const blob = new Blob([newView], { type: image.mimeType });
-
     return createImageBitmap(blob).then(bitmap => {
       texture.image = bitmap;
       texture.needsUpdate = true;
       return texture;
     });
+  }
+
+  private ddsParse(buffer: ArrayBuffer): THREE.CompressedTexture {
+    const ddsLoader = new DDSLoader();
+    const dds = ddsLoader.parse(buffer, false);
+
+    const ct = new THREE.CompressedTexture(
+      dds.mipmaps as any,
+      dds.width,
+      dds.height,
+      dds.format as THREE.CompressedPixelFormat
+    );
+    return ct;
+  }
+
+  // private async basisuParseAsync(buffer: ArrayBuffer): Promise<THREE.CompressedTexture> {
+  //   return new Promise((resolve, reject) => {
+  //     const ktx2Loader = new BasisTextureLoader();
+  //     return ktx2Loader.load(
+  //       buffer,
+  //       compressedTexture => {
+  //         resolve(compressedTexture);
+  //       },
+  //       err => reject(err)
+  //     );
+  //   });
+  // }
+
+  private async ktx2ParseAsync(bufferView: ArrayBuffer, mimeType: string): Promise<THREE.CompressedTexture> {
+    console.log('Ktx2');
+    const blob = new Blob([bufferView], { type: mimeType });
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+      return new Promise((resolve, reject) => {
+        const ktx2Loader = new KTX2Loader();
+        ktx2Loader.setTranscoderPath('./basis/');
+        const renderer = new THREE.WebGLRenderer();
+        ktx2Loader.detectSupport(renderer);
+        renderer.dispose();
+        console.log('Pre-parse');
+
+        ktx2Loader.load(
+          objectUrl,
+          compressedTexture => {
+            console.log('success!', compressedTexture);
+            return resolve(compressedTexture);
+          },
+          undefined,
+          err => {
+            console.log('err!', err);
+            return reject(err);
+          }
+        );
+        console.log('Post-parse');
+      });
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
   }
 
   private async getVertexBuffer(

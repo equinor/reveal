@@ -69,7 +69,13 @@ export type Material = {
 };
 
 export type Texture = {
+  extensions?: KnownTextureExtensions;
   source: number;
+};
+
+export type KnownTextureExtensions = {
+  MSFT_texture_dds?: { source: number };
+  KHR_texture_basisu?: { source: number };
 };
 
 export type Image = {
