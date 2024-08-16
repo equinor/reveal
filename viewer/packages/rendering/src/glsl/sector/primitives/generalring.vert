@@ -1,5 +1,4 @@
 #pragma glslify: import('../../base/determineMatrixOverride.glsl');
-#pragma glslify: import('../../treeIndex/treeIndexPacking.glsl');
 #pragma glslify: import('../../base/renderModes.glsl')
 #pragma glslify: import('../../base/nodeAppearance.glsl')
 #pragma glslify: import('../../base/determineNodeAppearance.glsl')
@@ -32,34 +31,28 @@ out vec3 v_color;
 out vec3 v_normal;
 out vec3 vViewPosition;
 
-out highp vec2 v_treeIndexPacked;
+flat out highp int v_treeIndex;
 
 void main() {
-    NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
-    if (!determineVisibility(appearance, renderMode)) {
-        gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
-        return;
-    }
+  NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
+  if(!determineVisibility(appearance, renderMode)) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
+    return;
+  }
 
-    v_treeIndexPacked = packTreeIndex(a_treeIndex);
-    v_oneMinusThicknessSqr = (1.0 - a_thickness) * (1.0 - a_thickness);
-    v_xy = vec2(position.x, position.y);
-    v_angle = a_angle;
-    v_arcAngle = a_arcAngle;
+  v_treeIndex = int(a_treeIndex);
+  v_oneMinusThicknessSqr = (1.0 - a_thickness) * (1.0 - a_thickness);
+  v_xy = vec2(position.x, position.y);
+  v_angle = a_angle;
+  v_arcAngle = a_arcAngle;
 
-    mat4 treeIndexWorldTransform = determineMatrixOverride(
-      a_treeIndex,
-      treeIndexTextureSize,
-      transformOverrideIndexTexture,
-      transformOverrideTextureSize,
-      transformOverrideTexture
-    );
+  mat4 treeIndexWorldTransform = determineMatrixOverride(a_treeIndex, treeIndexTextureSize, transformOverrideIndexTexture, transformOverrideTextureSize, transformOverrideTexture);
 
-    vec3 transformed = (a_instanceMatrix * vec4(position, 1.0)).xyz;
-    vec4 mvPosition = modelViewMatrix * treeIndexWorldTransform * vec4( transformed, 1.0 );
-    v_color = a_color;
+  vec3 transformed = (a_instanceMatrix * vec4(position, 1.0)).xyz;
+  vec4 mvPosition = modelViewMatrix * treeIndexWorldTransform * vec4(transformed, 1.0);
+  v_color = a_color;
 
-    v_normal = normalMatrix * normalize(treeIndexWorldTransform * vec4(normalize(a_normal), 0.0)).xyz;
-    vViewPosition = mvPosition.xyz;
-    gl_Position = projectionMatrix * mvPosition;
+  v_normal = normalMatrix * normalize(treeIndexWorldTransform * vec4(normalize(a_normal), 0.0)).xyz;
+  vViewPosition = mvPosition.xyz;
+  gl_Position = projectionMatrix * mvPosition;
 }

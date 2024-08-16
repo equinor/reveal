@@ -1,7 +1,6 @@
 #pragma glslify: import('../../math/mul3.glsl')
 #pragma glslify: import('../../math/quadToViewSpace.glsl')
 #pragma glslify: import('../../base/determineMatrixOverride.glsl');
-#pragma glslify: import('../../treeIndex/treeIndexPacking.glsl');
 #pragma glslify: import('../../base/renderModes.glsl')
 #pragma glslify: import('../../base/nodeAppearance.glsl')
 #pragma glslify: import('../../base/determineNodeAppearance.glsl')
@@ -46,98 +45,91 @@ out float v_arcAngle;
 out vec3 v_color;
 out vec3 v_normal;
 
-out highp vec2 v_treeIndexPacked;
+flat out highp int v_treeIndex;
 
 void main() {
-    NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
-    if (!determineVisibility(appearance, renderMode)) {
-        gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
-        return;
-    }
+  NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
+  if(!determineVisibility(appearance, renderMode)) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
+    return;
+  }
 
-    v_treeIndexPacked = packTreeIndex(a_treeIndex);
-    mat4 treeIndexWorldTransform = determineMatrixOverride(
-      a_treeIndex,
-      treeIndexTextureSize,
-      transformOverrideIndexTexture,
-      transformOverrideTextureSize,
-      transformOverrideTexture
-    );
+  v_treeIndex = int(a_treeIndex);
+  mat4 treeIndexWorldTransform = determineMatrixOverride(a_treeIndex, treeIndexTextureSize, transformOverrideIndexTexture, transformOverrideTextureSize, transformOverrideTexture);
 
-    vec3 centerA = mul3(treeIndexWorldTransform, a_centerA);
-    vec3 centerB = mul3(treeIndexWorldTransform, a_centerB);
+  vec3 centerA = mul3(treeIndexWorldTransform, a_centerA);
+  vec3 centerB = mul3(treeIndexWorldTransform, a_centerB);
 
-    vec3 center = 0.5 * (centerA + centerB);
-    float halfHeight = 0.5 * length(centerA - centerB);
-    vec3 dir = normalize(centerA - centerB);
-    vec3 newPosition = position;
+  vec3 center = 0.5 * (centerA + centerB);
+  float halfHeight = 0.5 * length(centerA - centerB);
+  vec3 dir = normalize(centerA - centerB);
+  vec3 newPosition = position;
 
-    vec3 rayOrigin = (inverseModelMatrix * vec4(cameraPosition, 1.0)).xyz;
-    vec3 objectToCameraModelSpace = rayOrigin - center;
+  vec3 rayOrigin = (inverseModelMatrix * vec4(cameraPosition, 1.0)).xyz;
+  vec3 objectToCameraModelSpace = rayOrigin - center;
 
-    float maxRadius = max(a_radiusA, a_radiusB);
-    float leftUpScale = maxRadius;
+  float maxRadius = max(a_radiusA, a_radiusB);
+  float leftUpScale = maxRadius;
 
-    vec3 lDir = dir;
-    if (dot(objectToCameraModelSpace, dir) < 0.0) { // direction vector looks away, flip it
-        lDir = -lDir;
-    }
+  vec3 lDir = dir;
+  if(dot(objectToCameraModelSpace, dir) < 0.0) { // direction vector looks away, flip it
+    lDir = -lDir;
+  }
 
-    vec3 left = normalize(cross(objectToCameraModelSpace, lDir));
-    vec3 up = normalize(cross(left, lDir));
+  vec3 left = normalize(cross(objectToCameraModelSpace, lDir));
+  vec3 up = normalize(cross(left, lDir));
 
     // make sure the billboard will not overlap with cap geometry (flickering effect), not important if we write to depth buffer
-    newPosition.x *= 1.0 - (maxRadius * (position.x + 1.0) * 0.0025 / halfHeight);
+  newPosition.x *= 1.0 - (maxRadius * (position.x + 1.0) * 0.0025 / halfHeight);
 
-    mat3 billboardWorldRotation = mat3(lDir, left, up);
-    vec3 cylinderAxisScales = vec3(halfHeight, maxRadius, maxRadius);
-    mat3 inverseBillboardWorldRotation = transpose(billboardWorldRotation);
-    vec3 cameraPosInCylinderSpace = inverseBillboardWorldRotation * (rayOrigin - center);
+  mat3 billboardWorldRotation = mat3(lDir, left, up);
+  vec3 cylinderAxisScales = vec3(halfHeight, maxRadius, maxRadius);
+  mat3 inverseBillboardWorldRotation = transpose(billboardWorldRotation);
+  vec3 cameraPosInCylinderSpace = inverseBillboardWorldRotation * (rayOrigin - center);
 
-    mat3 billboardWorldScaleRotation = mat3(halfHeight * lDir, maxRadius * left, maxRadius * up);
-    vec3 localBillboardPosition = center + billboardWorldScaleRotation * newPosition;
-    vec3 surfacePoint = mul3(modelViewMatrix, localBillboardPosition);
+  mat3 billboardWorldScaleRotation = mat3(halfHeight * lDir, maxRadius * left, maxRadius * up);
+  vec3 localBillboardPosition = center + billboardWorldScaleRotation * newPosition;
+  vec3 surfacePoint = mul3(modelViewMatrix, localBillboardPosition);
 
     // Due to numeric instability when near and far planes are relatively close to each other,
     // we just clamp near to a relatively low constant when checking whether we're inside the cylinder
-    float near = min(1.0, projectionMatrix[3][2] / (projectionMatrix[2][2] - 1.0));
+  float near = min(1.0, projectionMatrix[3][2] / (projectionMatrix[2][2] - 1.0));
 
     // Check whether we are inside the primitive, in which case the quad must cover the entire screen
-    if (isWithinSpan(cameraPosInCylinderSpace, cylinderAxisScales + vec3(near))) {
-        surfacePoint = transformQuadToCoverScreenInViewSpace(newPosition, projectionMatrix, near);
-    }
+  if(isWithinSpan(cameraPosInCylinderSpace, cylinderAxisScales + vec3(near))) {
+    surfacePoint = transformQuadToCoverScreenInViewSpace(newPosition, projectionMatrix, near);
+  }
 
-    gl_Position = projectionMatrix * vec4( surfacePoint, 1.0 );
-
+  gl_Position = projectionMatrix * vec4(surfacePoint, 1.0);
 
     // out data
-    v_angle = a_angle;
-    v_arcAngle = a_arcAngle;
+  v_angle = a_angle;
+  v_arcAngle = a_arcAngle;
 
     // compute basis for cone
-    v_W.xyz = dir;
-    v_U.xyz = (treeIndexWorldTransform * vec4(a_localXAxis, 0.0)).xyz;
-    v_W.xyz = normalize(normalMatrix * v_W.xyz);
-    v_U.xyz = normalize(normalMatrix * v_U.xyz);
+  v_W.xyz = dir;
+  v_U.xyz = (treeIndexWorldTransform * vec4(a_localXAxis, 0.0)).xyz;
+  v_W.xyz = normalize(normalMatrix * v_W.xyz);
+  v_U.xyz = normalize(normalMatrix * v_U.xyz);
     // We pack surfacePoint as w-components of U and W
-    v_W.w = surfacePoint.z;
-    v_U.w = surfacePoint.x;
+  v_W.w = surfacePoint.z;
+  v_U.w = surfacePoint.x;
 
-    mat4 modelToTransformOffset = modelViewMatrix * treeIndexWorldTransform;
+  mat4 modelToTransformOffset = modelViewMatrix * treeIndexWorldTransform;
 
-    float radiusB = length((modelToTransformOffset * vec4(a_localXAxis * a_radiusB, 0.0)).xyz);
-    float radiusA = length((modelToTransformOffset * vec4(a_localXAxis * a_radiusA, 0.0)).xyz);
+  float radiusB = length((modelToTransformOffset * vec4(a_localXAxis * a_radiusB, 0.0)).xyz);
+  float radiusA = length((modelToTransformOffset * vec4(a_localXAxis * a_radiusA, 0.0)).xyz);
 
     // We pack radii as w-components of v_centerB
-    v_centerB.xyz = mul3(modelViewMatrix, centerB);
-    v_centerB.w = radiusB;
+  v_centerB.xyz = mul3(modelViewMatrix, centerB);
+  v_centerB.w = radiusB;
 
-    v_V.xyz = -cross(v_U.xyz, v_W.xyz);
-    v_V.w = surfacePoint.y;
+  v_V.xyz = -cross(v_U.xyz, v_W.xyz);
+  v_V.w = surfacePoint.y;
 
-    v_centerA.xyz = mul3(modelViewMatrix, centerA);
-    v_centerA.w = radiusA;
+  v_centerA.xyz = mul3(modelViewMatrix, centerA);
+  v_centerA.w = radiusA;
 
-    v_color = a_color;
-    v_normal = normalMatrix * normal;
+  v_color = a_color;
+  v_normal = normalMatrix * normal;
 }

@@ -7,17 +7,19 @@ bool isClipped(vec3 point) {
   vec3 pointFlipped = -point;
   vec4 plane;
 
-  for (int i = 0; i < UNION_CLIPPING_PLANES; i++) {
+  for(int i = 0; i < UNION_CLIPPING_PLANES; i++) {
     plane = clippingPlanes[i];
-    if (dot(pointFlipped, plane.xyz) > plane.w) return true;
+    if(dot(pointFlipped, plane.xyz) > plane.w)
+      return true;
   }
 #if UNION_CLIPPING_PLANES < NUM_CLIPPING_PLANES
   bool clipped = true;
-  for ( int i = UNION_CLIPPING_PLANES; i < NUM_CLIPPING_PLANES; i ++ ) {
-      plane = clippingPlanes[ i ];
-      clipped = (dot(pointFlipped, plane.xyz) > plane.w) && clipped;
+  for(int i = UNION_CLIPPING_PLANES; i < NUM_CLIPPING_PLANES; i++) {
+    plane = clippingPlanes[i];
+    clipped = (dot(pointFlipped, plane.xyz) > plane.w) && clipped;
   }
-  if ( clipped ) return true;
+  if(clipped)
+    return true;
 #endif
 #endif
   return false;

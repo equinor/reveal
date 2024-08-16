@@ -312,6 +312,12 @@ export class Cognite3DViewer {
             undefined
           ));
 
+    const provokingVertexExtension = this.renderer.getContext().getExtension('WEBGL_provoking_vertex');
+    if (provokingVertexExtension) {
+      // WEBGL_provoking_vertex extensions fixes flat shading performance on Apple metal, and will only be non-null on platforms where FIRST_VERTEX_CONVENTION is more performant.
+      // https://registry.khronos.org/webgl/extensions/WEBGL_provoking_vertex/
+      provokingVertexExtension.provokingVertexWEBGL(provokingVertexExtension.FIRST_VERTEX_CONVENTION_WEBGL);
+    }
     this._activeCameraManager = new ProxyCameraManager(initialActiveCameraManager);
     const revealOptions = createRevealManagerOptions(options, this._renderer.getPixelRatio());
     if (options._localModels === true) {

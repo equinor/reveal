@@ -5,4 +5,4 @@ struct GeometryTypeEnum {
   int InstancedMesh;
 };
 
-const GeometryTypeEnum GeometryType = GeometryTypeEnum(1,2,3,4);
+const GeometryTypeEnum GeometryType = GeometryTypeEnum(1, 2, 3, 4);

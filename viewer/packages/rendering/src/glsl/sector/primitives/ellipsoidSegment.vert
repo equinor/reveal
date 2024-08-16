@@ -1,6 +1,5 @@
 #pragma glslify: import('../../math/mul3.glsl')
 #pragma glslify: import('../../base/determineMatrixOverride.glsl');
-#pragma glslify: import('../../treeIndex/treeIndexPacking.glsl');
 #pragma glslify: import('../../base/renderModes.glsl')
 #pragma glslify: import('../../base/nodeAppearance.glsl')
 #pragma glslify: import('../../base/determineNodeAppearance.glsl')
@@ -41,83 +40,77 @@ out vec4 sphereNormal;
 out vec3 v_color;
 out vec3 v_normal;
 
-out highp vec2 v_treeIndexPacked;
+flat out highp int v_treeIndex;
 
 void main() {
-    NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
-    if (!determineVisibility(appearance, renderMode)) {
-        gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
-        return;
-    }
+  NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
+  if(!determineVisibility(appearance, renderMode)) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
+    return;
+  }
 
-    v_treeIndexPacked = packTreeIndex(a_treeIndex);
+  v_treeIndex = int(a_treeIndex);
 
-    mat4 treeIndexWorldTransform = determineMatrixOverride(
-      a_treeIndex,
-      treeIndexTextureSize,
-      transformOverrideIndexTexture,
-      transformOverrideTextureSize,
-      transformOverrideTexture
-    );
+  mat4 treeIndexWorldTransform = determineMatrixOverride(a_treeIndex, treeIndexTextureSize, transformOverrideIndexTexture, transformOverrideTextureSize, transformOverrideTexture);
 
-    vec3 centerWithOffset = mul3(treeIndexWorldTransform, a_center).xyz;
+  vec3 centerWithOffset = mul3(treeIndexWorldTransform, a_center).xyz;
 
-    vec3 normalWithOffset = (treeIndexWorldTransform * vec4(a_normal, 0)).xyz;
+  vec3 normalWithOffset = (treeIndexWorldTransform * vec4(a_normal, 0)).xyz;
 
-    vec3 lDir;
-    float distanceToCenterOfSegment = a_verticalRadius - a_height * 0.5;
-    vec3 centerOfSegment = centerWithOffset + normalWithOffset * distanceToCenterOfSegment;
+  vec3 lDir;
+  float distanceToCenterOfSegment = a_verticalRadius - a_height * 0.5;
+  vec3 centerOfSegment = centerWithOffset + normalWithOffset * distanceToCenterOfSegment;
 
 #if defined(COGNITE_ORTHOGRAPHIC_CAMERA)
-      vec3 objectToCameraModelSpace = inverseNormalMatrix * vec3(0.0, 0.0, 1.0);
+  vec3 objectToCameraModelSpace = inverseNormalMatrix * vec3(0.0, 0.0, 1.0);
 #else
-      vec3 rayOrigin = (inverseModelMatrix * vec4(cameraPosition, 1.0)).xyz;
-      vec3 objectToCameraModelSpace = rayOrigin - centerOfSegment;
+  vec3 rayOrigin = (inverseModelMatrix * vec4(cameraPosition, 1.0)).xyz;
+  vec3 objectToCameraModelSpace = rayOrigin - centerOfSegment;
 #endif
 
-    vec3 newPosition = position;
+  vec3 newPosition = position;
 
-    float bb = dot(objectToCameraModelSpace, normalWithOffset);
-    if (bb < 0.0) { // direction vector looks away, flip it
-      lDir = -normalWithOffset;
-    } else { // direction vector already looks in my direction
-      lDir = normalWithOffset;
-    }
+  float bb = dot(objectToCameraModelSpace, normalWithOffset);
+  if(bb < 0.0) { // direction vector looks away, flip it
+    lDir = -normalWithOffset;
+  } else { // direction vector already looks in my direction
+    lDir = normalWithOffset;
+  }
 
-    vec3 left = normalize(cross(objectToCameraModelSpace, lDir));
-    vec3 up = normalize(cross(left, lDir));
+  vec3 left = normalize(cross(objectToCameraModelSpace, lDir));
+  vec3 up = normalize(cross(left, lDir));
 
     // make sure the billboard will not overlap with cap geometry (flickering effect), not important if we write to depth buffer
-    newPosition.x *= 1.0 - (a_verticalRadius * (position.x + 1.0) * 0.0025 / a_height);
+  newPosition.x *= 1.0 - (a_verticalRadius * (position.x + 1.0) * 0.0025 / a_height);
 
     // Negative angle means height larger than radius,
     // so we should have full size so we can render the largest part of the ellipsoid segment
-    float ratio = max(0.0, 1.0 - a_height / a_verticalRadius);
+  float ratio = max(0.0, 1.0 - a_height / a_verticalRadius);
     // maxRadiusOfSegment is the radius of the circle (projected ellipsoid) when ellipsoid segment is seen from above
-    float maxRadiusOfSegment = a_horizontalRadius * sqrt(1.0 - ratio * ratio);
+  float maxRadiusOfSegment = a_horizontalRadius * sqrt(1.0 - ratio * ratio);
 
-    vec3 displacement = vec3(newPosition.x * a_height * 0.5, maxRadiusOfSegment * newPosition.y, maxRadiusOfSegment * newPosition.z);
-    vec3 surfacePoint = centerOfSegment + mat3(lDir, left, up) * displacement;
-    vec3 transformed = surfacePoint;
+  vec3 displacement = vec3(newPosition.x * a_height * 0.5, maxRadiusOfSegment * newPosition.y, maxRadiusOfSegment * newPosition.z);
+  vec3 surfacePoint = centerOfSegment + mat3(lDir, left, up) * displacement;
+  vec3 transformed = surfacePoint;
 
-    surfacePoint = mul3(modelViewMatrix, surfacePoint);
-    center.xyz = mul3(modelViewMatrix, centerWithOffset);
-    center.w = a_verticalRadius; // Pack radius into w-component
-    hRadius = a_horizontalRadius;
-    height = a_height;
-    v_color = a_color;
+  surfacePoint = mul3(modelViewMatrix, surfacePoint);
+  center.xyz = mul3(modelViewMatrix, centerWithOffset);
+  center.w = a_verticalRadius; // Pack radius into w-component
+  hRadius = a_horizontalRadius;
+  height = a_height;
+  v_color = a_color;
 
     // compute basis
-    sphereNormal.xyz = normalMatrix * normalWithOffset;
-    U.xyz = normalMatrix * up;
-    V.xyz = normalMatrix * left;
+  sphereNormal.xyz = normalMatrix * normalWithOffset;
+  U.xyz = normalMatrix * up;
+  V.xyz = normalMatrix * left;
 
     // We pack surfacePoint as w-components of U, V and axis
-    U.w = surfacePoint.x;
-    V.w = surfacePoint.y;
-    sphereNormal.w = surfacePoint.z;
+  U.w = surfacePoint.x;
+  V.w = surfacePoint.y;
+  sphereNormal.w = surfacePoint.z;
 
     // TODO should perhaps be a different normal?
-    vec4 mvPosition = modelViewMatrix * vec4( transformed, 1.0 );
-    gl_Position = projectionMatrix * mvPosition;
+  vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+  gl_Position = projectionMatrix * mvPosition;
 }

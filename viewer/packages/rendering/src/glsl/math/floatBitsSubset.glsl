@@ -1,9 +1,9 @@
-float floatBitsSubset(float inNumber, int fromLeastSignificantBitIndex,  int toMostSignificantBitIndex) {
-    float r = float(fromLeastSignificantBitIndex);
-    float l = float(toMostSignificantBitIndex);
+float floatBitsSubset(float inNumber, int fromLeastSignificantBitIndex, int toMostSignificantBitIndex) {
+  float r = float(fromLeastSignificantBitIndex);
+  float l = float(toMostSignificantBitIndex);
 
-    float bitShift = pow(2.0, r);
-    return mod(((inNumber - mod(inNumber, bitShift)) / bitShift), pow(2.0, l - r));
+  float bitShift = pow(2.0, r);
+  return mod(((inNumber - mod(inNumber, bitShift)) / bitShift), pow(2.0, l - r));
 }
 
 /*
@@ -20,7 +20,7 @@ expected output = 1010_|11|01 = 3
 1)  subtract any bits in the least significant bit-subset
 
   mod(inNumber=173, pow(2.0, from=2)) = mod(inNumber, 4) = 1
-  
+
   inNumber - 1 = 172
 
 2)  bitshift such that we remove the least significant bit-subset
@@ -36,4 +36,4 @@ expected output = 1010_|11|01 = 3
 
   or in binary notation: 0000_0011 which is the expected result.
 
-*/ 
+*/

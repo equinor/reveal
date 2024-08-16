@@ -1,5 +1,4 @@
 #pragma glslify: import('../../base/determineMatrixOverride.glsl');
-#pragma glslify: import('../../treeIndex/treeIndexPacking.glsl');
 #pragma glslify: import('../../base/renderModes.glsl')
 #pragma glslify: import('../../base/nodeAppearance.glsl')
 #pragma glslify: import('../../base/determineNodeAppearance.glsl')
@@ -28,48 +27,42 @@ out vec3 v_normal;
 out vec3 vViewPosition;
 out vec4 v_nodeAppearanceTexel;
 
-out highp vec2 v_treeIndexPacked;
+flat out highp int v_treeIndex;
 
 void main() {
-    NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
-    if (!determineVisibility(appearance, renderMode)) {
-        gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
-        return;
-    }
+  NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
+  if(!determineVisibility(appearance, renderMode)) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
+    return;
+  }
 
-    v_nodeAppearanceTexel = appearance.colorTexel;
-    v_treeIndexPacked = packTreeIndex(a_treeIndex);
+  v_nodeAppearanceTexel = appearance.colorTexel;
+  v_treeIndex = int(a_treeIndex);
     // normalized theta and phi are packed into positions
-    float theta = position.x * a_arcAngle;
-    float phi = position.y;
-    float cosTheta = cos(theta);
-    float sinTheta = sin(theta);
-    vec3 pos3 = vec3(0);
+  float theta = position.x * a_arcAngle;
+  float phi = position.y;
+  float cosTheta = cos(theta);
+  float sinTheta = sin(theta);
+  vec3 pos3 = vec3(0);
 
-    pos3.x = (a_radius + a_tubeRadius * cos(phi)) * cosTheta;
-    pos3.y = (a_radius + a_tubeRadius * cos(phi)) * sinTheta;
-    pos3.z = a_tubeRadius * sin(phi);
+  pos3.x = (a_radius + a_tubeRadius * cos(phi)) * cosTheta;
+  pos3.y = (a_radius + a_tubeRadius * cos(phi)) * sinTheta;
+  pos3.z = a_tubeRadius * sin(phi);
 
-    mat4 treeIndexWorldTransform = determineMatrixOverride(
-      a_treeIndex,
-      treeIndexTextureSize,
-      transformOverrideIndexTexture,
-      transformOverrideTextureSize,
-      transformOverrideTexture
-    );
+  mat4 treeIndexWorldTransform = determineMatrixOverride(a_treeIndex, treeIndexTextureSize, transformOverrideIndexTexture, transformOverrideTextureSize, transformOverrideTexture);
 
-    vec3 transformed = (a_instanceMatrix * vec4(pos3, 1.0)).xyz;
+  vec3 transformed = (a_instanceMatrix * vec4(pos3, 1.0)).xyz;
 
     // Calculate normal vectors if we're not picking
-    vec3 center = (a_instanceMatrix * vec4(a_radius * cosTheta, a_radius * sinTheta, 0.0, 1.0)).xyz;
-    vec3 objectNormal = normalize(transformed.xyz - center);
+  vec3 center = (a_instanceMatrix * vec4(a_radius * cosTheta, a_radius * sinTheta, 0.0, 1.0)).xyz;
+  vec3 objectNormal = normalize(transformed.xyz - center);
 
-    v_color = a_color;
-    v_normal = normalMatrix * normalize(treeIndexWorldTransform * vec4(objectNormal, 0.0)).xyz;
+  v_color = a_color;
+  v_normal = normalMatrix * normalize(treeIndexWorldTransform * vec4(objectNormal, 0.0)).xyz;
 
-    vec4 modelViewPosition = modelViewMatrix * treeIndexWorldTransform * vec4(transformed, 1.0);
+  vec4 modelViewPosition = modelViewMatrix * treeIndexWorldTransform * vec4(transformed, 1.0);
 
-    vViewPosition = modelViewPosition.xyz;
+  vViewPosition = modelViewPosition.xyz;
 
-    gl_Position = projectionMatrix * modelViewPosition;
+  gl_Position = projectionMatrix * modelViewPosition;
 }

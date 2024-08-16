@@ -1,5 +1,4 @@
 #pragma glslify: import('../../base/determineMatrixOverride.glsl');
-#pragma glslify: import('../../treeIndex/treeIndexPacking.glsl');
 #pragma glslify: import('../../base/renderModes.glsl')
 #pragma glslify: import('../../base/nodeAppearance.glsl')
 #pragma glslify: import('../../base/determineNodeAppearance.glsl')
@@ -28,40 +27,33 @@ out vec3 v_normal;
 out vec3 vViewPosition;
 out vec4 v_nodeAppearanceTexel;
 
-out highp vec2 v_treeIndexPacked;
+flat out highp int v_treeIndex;
 
 void main() {
-    NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
-    if (!determineVisibility(appearance, renderMode)) {
-        gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
-        return;
-    }
+  NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
+  if(!determineVisibility(appearance, renderMode)) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
+    return;
+  }
 
-    v_nodeAppearanceTexel = appearance.colorTexel;
-    v_treeIndexPacked = packTreeIndex(a_treeIndex);
-    vec3 transformed;
+  v_nodeAppearanceTexel = appearance.colorTexel;
+  v_treeIndex = int(a_treeIndex);
+  vec3 transformed;
     // reduce the avarage branchings
-    if (position.x < 1.5) {
-      transformed = position.x == 0.0 ? a_vertex1 : a_vertex2;
-    } else {
-      transformed = position.x == 2.0 ? a_vertex3 : a_vertex4;
-    }
+  if(position.x < 1.5) {
+    transformed = position.x == 0.0 ? a_vertex1 : a_vertex2;
+  } else {
+    transformed = position.x == 2.0 ? a_vertex3 : a_vertex4;
+  }
 
-    mat4 treeIndexWorldTransform = determineMatrixOverride(
-      a_treeIndex,
-      treeIndexTextureSize,
-      transformOverrideIndexTexture,
-      transformOverrideTextureSize,
-      transformOverrideTexture
-    );
+  mat4 treeIndexWorldTransform = determineMatrixOverride(a_treeIndex, treeIndexTextureSize, transformOverrideIndexTexture, transformOverrideTextureSize, transformOverrideTexture);
 
-    vec3 objectNormal = cross(a_vertex1 - a_vertex2, a_vertex1 - a_vertex3);
+  vec3 objectNormal = cross(a_vertex1 - a_vertex2, a_vertex1 - a_vertex3);
 
-    v_color = a_color;
-    v_normal = normalMatrix * normalize(treeIndexWorldTransform * vec4(objectNormal, 0.0)).xyz;
+  v_color = a_color;
+  v_normal = normalMatrix * normalize(treeIndexWorldTransform * vec4(objectNormal, 0.0)).xyz;
 
-
-    vec4 mvPosition = modelViewMatrix * treeIndexWorldTransform * vec4( transformed, 1.0 );
-    vViewPosition = mvPosition.xyz;
-    gl_Position = projectionMatrix * mvPosition;
+  vec4 mvPosition = modelViewMatrix * treeIndexWorldTransform * vec4(transformed, 1.0);
+  vViewPosition = mvPosition.xyz;
+  gl_Position = projectionMatrix * mvPosition;
 }
