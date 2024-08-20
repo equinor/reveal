@@ -1,4 +1,3 @@
-#version 300 es
 #pragma glslify: import('../base/determineMatrixOverride.glsl')
 #pragma glslify: import('../base/renderModes.glsl')
 #pragma glslify: import('../base/nodeAppearance.glsl')
@@ -37,7 +36,7 @@ flat out highp int v_treeIndex;
 void main() {
   NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, treeIndex);
   if(!determineVisibility(appearance, renderMode)) {
-    gl_Position = vec4(2.0f, 2.0f, 2.0f, 1.0f); // Will be clipped
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
     return;
   }
 
@@ -46,7 +45,7 @@ void main() {
 
   mat4 treeIndexWorldTransform = determineMatrixOverride(treeIndex, treeIndexTextureSize, transformOverrideIndexTexture, transformOverrideTextureSize, transformOverrideTexture);
 
-  vec4 modelViewPosition = modelViewMatrix * treeIndexWorldTransform * vec4(position, 1.0f);
+  vec4 modelViewPosition = modelViewMatrix * treeIndexWorldTransform * vec4(position, 1.0);
   v_viewPosition = modelViewPosition.xyz;
 
 #if defined(IS_TEXTURED)
