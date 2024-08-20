@@ -8,7 +8,6 @@ precision highp float;
 #pragma glslify: import('../base/determineNodeAppearance.glsl');
 #pragma glslify: import('../base/determineColor.glsl');
 #pragma glslify: import('../base/isClipped.glsl')
-#pragma glslify: import('../treeIndex/treeIndexPacking.glsl')
 
 uniform sampler2D matCapTexture;
 uniform lowp int renderMode;

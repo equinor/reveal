@@ -1,5 +1,4 @@
 #pragma glslify: import('../base/determineMatrixOverride.glsl')
-#pragma glslify: import('../treeIndex/treeIndexPacking.glsl')
 #pragma glslify: import('../base/renderModes.glsl')
 #pragma glslify: import('../base/nodeAppearance.glsl')
 #pragma glslify: import('../base/determineNodeAppearance.glsl')
