@@ -41,7 +41,7 @@ void main() {
   }
 
   v_nodeAppearanceTexel = appearance.colorTexel;
-  v_treeIndex = treeIndex;
+  v_treeIndex = int(treeIndex);
 
   mat4 treeIndexWorldTransform = determineMatrixOverride(treeIndex, treeIndexTextureSize, transformOverrideIndexTexture, transformOverrideTextureSize, transformOverrideTexture);
 
