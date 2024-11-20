@@ -65,8 +65,8 @@ module.exports = env => {
         },
         {
           test: /\.(glsl|vert|frag)$/,
-          type: 'asset/source',
-          use: ['glslify-loader']
+          exclude: /node_modules/,
+          use: ['raw-loader', 'glslify-loader']
         },
         {
           test: /\.css$/,
