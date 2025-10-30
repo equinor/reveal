@@ -1,34 +1,66 @@
 // For format details, see https://aka.ms/devcontainer.json For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/main/containers/typescript-node
+// If you do any changes to this file, rebuild the container to apply them.
+// In vscode, press F1 > Dev Containers: Rebuild Container
 {
   "name": "Reveal devcontainer",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
-  "customizations": {
-    "vscode": {
-      // Set *default* container specific settings.json values on container create.
-      "settings": {
-        "terminal.integrated.defaultProfile.linux": "zsh"
-      },
-      // Add the IDs of extensions you want installed when the container is created.
-      "extensions": [
-        "dbaeumer.vscode-eslint",
-        "mhutchie.git-graph",
-        "eamodio.gitlens"
-      ]
-    }
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/rust:1": {}
   },
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [
-    "localhost:3549" // Port for the Examples server
-  ],
+  "postCreateCommand": "sudo apt-get -y update && sudo apt-get --fix-missing -y install glslang-tools",
   // Use 'postCreateCommand' to run commands after the container is created.
   // The xserver deps is needed for the GL package build needed by Reveal. Todo: Is this really needed any longer?
   // "postCreateCommand": "sudo apt-get -y update && sudo apt-get --fix-missing -y install xserver-xorg-dev libxi-dev libxext-dev",
   "postStartCommand": "cd viewer && yarn install && cd ../examples && yarn install",
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [
+    "localhost:3549" // Port for the Examples server
+  ],
+  "mounts": [ // Optional: Add mounts for host-folders you want access to in the container
+    {
+      "type": "bind",
+      "source": "/e/reveal-artifacts/public", // The path on your host machine
+      "target": "/workspaces/reveal/examples/public/bind" // The path in the container
+    }
+  ],
   // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
   "remoteUser": "node",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/rust:1": {}
+  "customizations": {
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "mhutchie.git-graph",
+        "raczzalan.webgl-glsl-editor", // not perfect, as it does not support glslify, but still very useful
+        "esbenp.prettier-vscode",
+        "EditorConfig.EditorConfig"
+      ],
+      // Set *default* container specific settings.json values on container create.
+      "settings": {
+        "[glsl]": {
+          "editor.defaultFormatter": "raczzalan.webgl-glsl-editor",
+          "editor.formatOnSave": false // Existing files are not formatted on save to avoid massive diffs
+        },
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit",
+          "source.organizeImports": "explicit",
+          "source.sort.json": "never"
+        },
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "files.autoSave": "onFocusChange",
+        "files.autoSaveWhenNoErrors": true, // Only auto save if there are no errors
+        "git.autofetch": true,
+        "git.autofetchPeriod": 180,
+        "git.enableSmartCommit": false, // Always require staging before commit
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "webgl-glsl-editor.codeInjection": true,
+        "webgl-glsl-editor.codeInjectionSource": [
+          "#version 300 es" // Makes sure #version is always injected so we can use WebGL2 syntax
+        ]
+      }
+    }
   }
 }
