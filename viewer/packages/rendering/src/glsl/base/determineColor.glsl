@@ -5,4 +5,3 @@ vec4 determineColor(vec3 originalColor, NodeAppearance nodeAppearance) {
     }
     return vec4(originalColor.rgb, overrideColor.a);
 }
-

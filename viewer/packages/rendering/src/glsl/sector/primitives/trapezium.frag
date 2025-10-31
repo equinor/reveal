@@ -5,7 +5,6 @@ precision highp float;
 #pragma glslify: import('../../base/determineNodeAppearance.glsl');
 #pragma glslify: import('../../base/determineColor.glsl');
 #pragma glslify: import('../../base/isClipped.glsl');
-#pragma glslify: import('../../treeIndex/treeIndexPacking.glsl');
 
 uniform sampler2D matCapTexture;
 uniform lowp int renderMode;
@@ -15,11 +14,10 @@ in vec3 v_normal;
 in vec3 vViewPosition;
 in vec4 v_nodeAppearanceTexel;
 
-in highp vec2 v_treeIndexPacked;
+flat in highp int v_treeIndex;
 
 void main()
 {
-    highp float v_treeIndex = unpackTreeIndex(v_treeIndexPacked);
     NodeAppearance appearance = nodeAppearanceFromTexel(v_nodeAppearanceTexel);
     if (isClipped(vViewPosition)) {
         discard;

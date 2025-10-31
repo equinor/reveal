@@ -10,14 +10,12 @@ NodeAppearance nodeAppearanceFromTexel(vec4 nodeAppearanceTexel) {
   return NodeAppearance(nodeAppearanceTexel, isVisible, renderInFront, renderGhosted);
 }
 
-NodeAppearance determineNodeAppearance(sampler2D nodeAppearanceTexture, vec2 textureSize, highp float treeIndex) {
-
+NodeAppearance determineNodeAppearance(sampler2D nodeAppearanceTexture, vec2 textureSize, highp int treeIndex) {
   highp int dataTextureWidth = int(textureSize.x);
   highp int dataTextureHeight = int(textureSize.y);
 
-  highp int iTreeIndex = int(treeIndex);
-  highp int xTreeIndexTextureCoord = iTreeIndex % dataTextureWidth;
-  highp int yTreeIndexTextureCoord = iTreeIndex / dataTextureWidth;
+  highp int xTreeIndexTextureCoord = treeIndex % dataTextureWidth;
+  highp int yTreeIndexTextureCoord = treeIndex / dataTextureWidth;
 
   vec4 texel = texelFetch(nodeAppearanceTexture, ivec2(xTreeIndexTextureCoord, yTreeIndexTextureCoord), 0);
   return nodeAppearanceFromTexel(texel);

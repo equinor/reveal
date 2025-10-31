@@ -13,7 +13,7 @@ vec3 packNormalToRgb( const in vec3 normal ) {
 }
 
 void updateFragmentColor(
-    int renderMode, vec4 color, float treeIndex,
+    int renderMode, vec4 color, int treeIndex,
     vec3 normal, float depth, sampler2D matCapTexture,
     int geometryType) {
     if (renderMode == RenderTypeColor || renderMode == RenderTypeEffects) {
@@ -55,7 +55,7 @@ void updateFragmentColor(
     } else if (renderMode == RenderTypeNormal) {
         outputColor = vec4(packNormalToRgb(normal), color.a);
     } else if (renderMode == RenderTypeTreeIndex) {
-        outputColor = vec4(packIntToColor(treeIndex), color.a);
+        outputColor = vec4(packIntToColor(float(treeIndex)), color.a);
     } else if (renderMode == RenderTypeDepth) {
         outputColor = packDepthToRGBA(depth);
     } else if (renderMode == RenderTypeLOD) {

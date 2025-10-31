@@ -1,7 +1,6 @@
 #pragma glslify: import('../../math/mul3.glsl')
 #pragma glslify: import('../../math/quadToViewSpace.glsl')
 #pragma glslify: import('../../base/determineMatrixOverride.glsl');
-#pragma glslify: import('../../treeIndex/treeIndexPacking.glsl');
 #pragma glslify: import('../../base/renderModes.glsl')
 #pragma glslify: import('../../base/nodeAppearance.glsl')
 #pragma glslify: import('../../base/determineNodeAppearance.glsl')
@@ -21,7 +20,7 @@ uniform lowp int renderMode;
 
 in vec3 position;
 in vec3 normal;
-in float a_treeIndex;
+in highp float a_treeIndex; // Input as float from vertex data
 in vec3 a_centerA;
 in vec3 a_centerB;
 in float a_radius;
@@ -32,7 +31,7 @@ in vec3 a_localXAxis;
 in float a_angle;
 in float a_arcAngle;
 
-flat out float v_treeIndex;
+flat out highp int v_treeIndex;
 out vec3 v_centerB;
 out mat3 v_modelBasis;
 out vec3 v_viewPos;
@@ -42,19 +41,18 @@ out vec2 v_angles;
 out vec3 v_color;
 out float v_radius;
 
-out highp vec2 v_treeIndexPacked;
+// removed v_treeIndexPacked, use v_treeIndex instead
 
 void main() {
-    NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, a_treeIndex);
+    v_treeIndex = int(a_treeIndex);
+    NodeAppearance appearance = determineNodeAppearance(colorDataTexture, treeIndexTextureSize, v_treeIndex);
     if (!determineVisibility(appearance, renderMode)) {
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Will be clipped
         return;
     }
 
-    v_treeIndexPacked = packTreeIndex(a_treeIndex);
-
     mat4 treeIndexWorldTransform = determineMatrixOverride(
-        a_treeIndex,
+        v_treeIndex,
         treeIndexTextureSize,
         transformOverrideIndexTexture,
         transformOverrideTextureSize,
@@ -99,7 +97,6 @@ void main() {
     gl_Position = projectionMatrix * vec4(viewBillboardPosition, 1.0);
 
     // varying data
-    v_treeIndex = a_treeIndex;
     v_angles[0] = a_angle;
     v_angles[1] = a_arcAngle;
 
