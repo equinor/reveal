@@ -26,7 +26,8 @@ export class CadGeometryRenderModePipelineProvider implements RenderPipelineProv
       currentRenderSize: new THREE.Vector2(1, 1)
     };
 
-    const layerMask = getLayerMask(RenderLayer.InFront) | getLayerMask(RenderLayer.Back);
+    const layerMask =
+      getLayerMask(RenderLayer.InFront) | getLayerMask(RenderLayer.Back) | getLayerMask(RenderLayer.Ghost);
     this._geometryPass = new GeometryPass(sceneHandler.scene, materialManager, renderMode, layerMask);
   }
 
