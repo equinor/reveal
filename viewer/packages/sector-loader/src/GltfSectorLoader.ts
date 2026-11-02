@@ -7,7 +7,7 @@ import { filterGeometryOutsideClipBox } from '@reveal/cad-parsers';
 import { DMModelIdentifier, SignedUrlRefresher } from '@reveal/data-providers';
 import type { ModelDataProvider } from '@reveal/data-providers';
 import type { ParsedGeometry } from '@reveal/sector-parser';
-import { GltfSectorParser, RevealGeometryCollectionType } from '@reveal/sector-parser';
+import { GltfSectorParser, RevealGeometryCollectionType, splitTorusCollectionByArcAngle } from '@reveal/sector-parser';
 import { MetricsLogger } from '@reveal/metrics';
 import { assertNever } from '@reveal/utilities';
 
@@ -57,13 +57,22 @@ export class GltfSectorLoader {
           case RevealGeometryCollectionType.GeneralCylinderCollection:
           case RevealGeometryCollectionType.GeneralRingCollection:
           case RevealGeometryCollectionType.QuadCollection:
-          case RevealGeometryCollectionType.TorusSegmentCollection:
           case RevealGeometryCollectionType.TrapeziumCollection:
           case RevealGeometryCollectionType.NutCollection:
             geometryBatchingQueue.push({
               type,
               geometryBuffer: filteredGeometryBuffer,
               instanceId: RevealGeometryCollectionType[type].toString()
+            });
+            break;
+          case RevealGeometryCollectionType.TorusSegmentCollection:
+            // Large arc torus segments use a finer grid, so they need their own batches (instanceId)
+            splitTorusCollectionByArcAngle(filteredGeometryBuffer).forEach(({ geometry, arcSegments }) => {
+              geometryBatchingQueue.push({
+                type,
+                geometryBuffer: geometry,
+                instanceId: `${RevealGeometryCollectionType[type]}:arc${arcSegments}`
+              });
             });
             break;
           case RevealGeometryCollectionType.InstanceMesh:

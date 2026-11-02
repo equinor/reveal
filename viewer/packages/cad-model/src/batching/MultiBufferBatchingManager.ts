@@ -91,6 +91,7 @@ export class MultiBufferBatchingManager implements DrawCallBatchingManager {
       return;
     }
     const sectorBatch = this.createSectorBatch(sectorId);
+    const processedTypes = new Set<RevealGeometryCollectionType>();
     geometryBatchingQueue.forEach(parsedGeometry => {
       // If instanceId is undefined, then the current geometry is a unique mesh
       // and should not be runtime batched.
@@ -98,7 +99,10 @@ export class MultiBufferBatchingManager implements DrawCallBatchingManager {
         return;
       }
       this.processGeometries(parsedGeometry as Required<ParsedGeometry>, sectorBatch, sectorId);
+      processedTypes.add(parsedGeometry.type);
     });
+    // After the whole queue, since one type can be split into several batches (e.g. torus segments by arc angle)
+    processedTypes.forEach(type => this.treeIndexToSectorsMap.markCompleted(sectorId, type));
   }
 
   public removeSectorBatches(sectorId: number): void {
@@ -245,7 +249,6 @@ export class MultiBufferBatchingManager implements DrawCallBatchingManager {
       const treeIndex = treeIndexInterleavedAttribute.getX(i);
       this.treeIndexToSectorsMap.set(treeIndex, sectorId);
     }
-    this.treeIndexToSectorsMap.markCompleted(sectorId, parsedGeometry.type);
   }
 
   private reallocateBufferGeometry({ buffer, mesh }: BatchBuffer) {

@@ -109,15 +109,32 @@ export function setConeGeometry(geometry: BufferGeometry): Box3 {
   return new Box3().setFromArray(positions);
 }
 
-export function setTorusGeometry(geometry: BufferGeometry): Box3 {
-  const lods = [
-    { tubularSegments: 9, radialSegments: 18 },
-    { tubularSegments: 5, radialSegments: 12 },
-    { tubularSegments: 4, radialSegments: 5 }
-  ];
+/**
+ * Arc segments for torus segments with an arc angle up to {@link TORUS_LARGE_ARC_ANGLE} (most of them are 90° elbows).
+ * The arc segments are spread over each torus segment's arc angle, not a full circle, so 9 segments
+ * (10° each on a 90° elbow) are about as fine as the 9-sided tube.
+ */
+export const TORUS_ARC_SEGMENTS = 9;
+
+/**
+ * Arc segments for torus segments with a larger arc angle, e.g. 180° U-bends, which would look faceted with 9.
+ */
+export const TORUS_LARGE_ARC_SEGMENTS = 18;
+
+/**
+ * Arc angle (radians) above which a torus segment uses {@link TORUS_LARGE_ARC_SEGMENTS}.
+ */
+export const TORUS_LARGE_ARC_ANGLE = (100 * Math.PI) / 180;
+
+/**
+ * Sets the torus segment grid. Performance: torus segments are tessellated in the vertex shader, and every
+ * instance runs the shader for every grid vertex, so the cost scales with (arcSegments + 1) × 10 vertices.
+ */
+export function setTorusGeometry(geometry: BufferGeometry, arcSegments: number = TORUS_ARC_SEGMENTS): Box3 {
+  const tubeSegments = 9;
   const transformFunc = (u: number, v: number) => [u, v * 2.0 * Math.PI];
 
-  const torusGeometry = generatePlane3D(lods[0].radialSegments, lods[0].tubularSegments, transformFunc);
+  const torusGeometry = generatePlane3D(arcSegments, tubeSegments, transformFunc);
 
   geometry.setIndex(torusGeometry.index);
   geometry.setAttribute('position', torusGeometry.position);

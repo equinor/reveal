@@ -144,6 +144,28 @@ describe(MultiBufferBatchingManager.name, () => {
   test('removeSectorBatches() ignores invalid sectorId', () => {
     expect(() => manager.removeSectorBatches(2)).not.toThrow();
   });
+
+  test('batchGeometries() maps tree indices of all batches when a type is split into several batches', () => {
+    const treeIndexToSectorsMap = new TreeIndexToSectorsMap(10);
+    manager = new MultiBufferBatchingManager(
+      geometryGroup,
+      new Mock<Materials>().object(),
+      { back: new IndexSet(), ghost: new IndexSet(), inFront: new IndexSet(), visible: new IndexSet() },
+      treeIndexToSectorsMap,
+      1024,
+      numberOfInstanceBuffers
+    );
+    const geometries = [
+      createParsedGeometryWithTreeIndices(RevealGeometryCollectionType.TorusSegmentCollection, [1, 2], 0),
+      createParsedGeometryWithTreeIndices(RevealGeometryCollectionType.TorusSegmentCollection, [3], 1)
+    ];
+
+    manager.batchGeometries(geometries, 5);
+
+    expect(treeIndexToSectorsMap.getSectorIdsForTreeIndex(1)).toContain(5);
+    expect(treeIndexToSectorsMap.getSectorIdsForTreeIndex(3)).toContain(5);
+    expect(treeIndexToSectorsMap.isCompleted(5, RevealGeometryCollectionType.TorusSegmentCollection)).toBe(true);
+  });
 });
 
 function createParsedGeometry(type: RevealGeometryCollectionType, elementCount: number, instanceId: number) {

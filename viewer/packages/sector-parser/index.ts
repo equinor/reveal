@@ -4,3 +4,4 @@
 export { GltfSectorParser } from './src/GltfSectorParser';
 export type { ParsedGeometry } from './src/types';
 export { RevealGeometryCollectionType } from './src/types';
+export { splitTorusCollectionByArcAngle } from './src/reveal-glb-parser/splitTorusCollection';
